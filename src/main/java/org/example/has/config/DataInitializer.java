@@ -135,7 +135,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private Doctor createDoctor(String code, String fullName, Gender gender, String phone, 
                                  String email, String specialty, String username, String password, Department department) {
-        User user = null;
+        User user;
         if (!userRepository.existsByUsername(username)) {
             user = User.builder()
                     .username(username)
@@ -145,6 +145,8 @@ public class DataInitializer implements CommandLineRunner {
                     .enabled(true)
                     .build();
             user = userRepository.save(user);
+        } else {
+            user = userRepository.findByUsername(username).orElse(null);
         }
 
         return doctorRepository.save(Doctor.builder()
@@ -183,7 +185,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private Patient createPatient(String code, String fullName, LocalDate dob, Gender gender, 
                                    String phone, String address, String username, String password) {
-        User user = null;
+        User user;
         if (!userRepository.existsByUsername(username)) {
             user = User.builder()
                     .username(username)
@@ -193,6 +195,8 @@ public class DataInitializer implements CommandLineRunner {
                     .enabled(true)
                     .build();
             user = userRepository.save(user);
+        } else {
+            user = userRepository.findByUsername(username).orElse(null);
         }
 
         return patientRepository.save(Patient.builder()

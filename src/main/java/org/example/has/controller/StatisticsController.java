@@ -19,6 +19,7 @@ import java.util.List;
 
 /**
  * REST Controller for hospital analytics and reporting.
+ * (Administrator metrics and stats dashboard)
  */
 @RestController
 @RequestMapping("/api/statistics")

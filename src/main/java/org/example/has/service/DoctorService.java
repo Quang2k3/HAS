@@ -1,7 +1,6 @@
 package org.example.has.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.has.domain.entity.Department;
 import org.example.has.domain.entity.Doctor;
 import org.example.has.domain.entity.User;
 import org.example.has.domain.enums.Role;

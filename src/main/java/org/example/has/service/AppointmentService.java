@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 /**
  * Service for managing appointments.
@@ -85,6 +86,25 @@ public class AppointmentService {
  */
     @Transactional
     public AppointmentResponse create(AppointmentRequest request) {
+
+        // Không cho đặt lịch trong quá khứ
+        LocalDateTime appointmentDateTime =
+                LocalDateTime.of(
+                        request.getAppointmentDate(),
+                        request.getAppointmentTime());
+
+        if (appointmentDateTime.isBefore(LocalDateTime.now())) {
+            throw new AppointmentConflictException(
+                    "Không được đặt lịch khám trong quá khứ");
+        }
+        // Không cho đặt lịch quá 3 tháng
+        if (request.getAppointmentDate().isAfter(
+                LocalDate.now().plusMonths(3))) {
+
+            throw new AppointmentConflictException(
+                    "Chỉ được đặt lịch trong vòng 3 tháng tới");
+        }
+
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Bệnh nhân", "id", request.getPatientId()));
@@ -92,7 +112,18 @@ public class AppointmentService {
         Doctor doctor = doctorRepository.findById(request.getDoctorId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Bác sĩ", "id", request.getDoctorId()));
+// Kiểm tra bệnh nhân có lịch trùng giờ hay không
+        boolean patientConflict = appointmentRepository
+                .existsByPatientIdAndAppointmentDateAndAppointmentTimeAndStatus(
+                        request.getPatientId(),
+                        request.getAppointmentDate(),
+                        request.getAppointmentTime(),
+                        AppointmentStatus.SCHEDULED);
 
+        if (patientConflict) {
+            throw new AppointmentConflictException(
+                    "Bệnh nhân đã có lịch hẹn vào thời gian này");
+        }
         boolean isConflict = appointmentRepository
                 .existsByDoctorIdAndAppointmentDateAndAppointmentTimeAndStatus(
                         request.getDoctorId(),
@@ -134,7 +165,11 @@ public class AppointmentService {
     public AppointmentResponse cancel(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn", "id", id));
-
+// Không hủy lịch đã qua
+        if (appointment.getAppointmentDate().isBefore(LocalDate.now())) {
+            throw new AppointmentConflictException(
+                    "Không thể hủy lịch khám đã qua");
+        }
         if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
             throw new AppointmentConflictException(
                     "Chỉ có thể hủy lịch hẹn đang ở trạng thái SCHEDULED. " +
@@ -156,6 +191,11 @@ public class AppointmentService {
     public AppointmentResponse complete(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn", "id", id));
+        // Không cho hoàn thành lịch khám khi chưa đến ngày khám
+        if (appointment.getAppointmentDate().isAfter(LocalDate.now())) {
+            throw new AppointmentConflictException(
+                    "Không thể hoàn thành lịch khám khi chưa đến ngày khám");
+        }
 
         if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
             throw new AppointmentConflictException(

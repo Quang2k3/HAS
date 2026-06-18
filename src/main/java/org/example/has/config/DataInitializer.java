@@ -44,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initAdminAccount() {
+
         if (!userRepository.existsByUsername("admin")) {
             User admin = User.builder()
                     .username("admin")
@@ -53,7 +54,17 @@ public class DataInitializer implements CommandLineRunner {
                     .enabled(true)
                     .build();
             userRepository.save(admin);
-            log.info("✅ Đã tạo tài khoản Admin mặc định (admin / admin123)");
+        }
+
+        if (!userRepository.existsByUsername("admin2")) {
+            User admin2 = User.builder()
+                    .username("admin2")
+                    .password(passwordEncoder.encode("123456"))
+                    .fullName("Quản trị viên hệ thống")
+                    .role(Role.ADMIN)
+                    .enabled(true)
+                    .build();
+            userRepository.save(admin2);
         }
     }
 
